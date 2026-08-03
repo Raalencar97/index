@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Atendimento · POD Betano</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0F0F23; --navycard:#17172E; --orange:#FF3C00; --white:#FFFFFF;
+    --cream:#FAF5F0; --card:#FFFFFF; --border:#E8E3DC; --slate:#3A3A55;
+    --lav:#C9C9D6; --call:#FFF0EC; --div:#4A4A63; --green:#178E33; --greenbg:#ECF6EE;
+    --red:#FF2A21; --bubble:#EEF1F6; --bubbleb:#D6DEEA;
+    --fdisp:'Barlow Condensed',sans-serif; --fbody:'Barlow',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--cream);font-family:var(--fbody);color:var(--slate);}
+  /* ===== masthead ===== */
+  .masthead{background:var(--navy);padding:14px 22px;position:relative;}
+  .masthead::after{content:'';display:block;height:4px;background:var(--orange);position:absolute;left:0;right:0;bottom:-4px;}
+  .masthead-inner{display:flex;align-items:center;justify-content:space-between;max-width:1180px;margin:0 auto;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-badge{width:34px;height:34px;border-radius:8px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:var(--fdisp);font-weight:800;color:var(--white);font-size:18px;}
+  .brand-text b{font-family:var(--fdisp);color:var(--white);font-size:19px;letter-spacing:.3px;}
+  .brand-text span{display:block;color:var(--lav);font-size:11.5px;letter-spacing:1.5px;text-transform:uppercase;margin-top:1px;}
+  .score-pill{background:var(--navycard);border:1px solid #2A2A45;border-radius:30px;padding:7px 16px;display:flex;align-items:center;gap:10px;}
+  .score-pill .lbl{color:var(--lav);font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;}
+  .score-pill .val{font-family:var(--fdisp);font-weight:700;font-size:20px;color:var(--orange);}
+  /* ===== layout (sidebar + conteúdo) ===== */
+  .layout{max-width:1320px;margin:0 auto;display:flex;align-items:flex-start;gap:0;}
+  .sidebar{width:236px;flex:none;background:var(--white);border-right:1px solid var(--border);position:sticky;top:0;align-self:stretch;min-height:calc(100vh - 62px);padding:16px 12px;}
+  .sidebar-label{font-family:var(--fbody);font-weight:700;font-size:10.5px;letter-spacing:1.8px;color:var(--slate);opacity:.65;text-transform:uppercase;padding:6px 10px 10px;}
+  .tabbtn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font-family:var(--fbody);font-weight:600;font-size:13px;color:var(--slate);background:transparent;border:1px solid transparent;border-radius:9px;padding:10px 12px;cursor:pointer;transition:.15s;margin-bottom:4px;}
+  .tabbtn .d{font-family:var(--fdisp);font-weight:700;color:var(--orange);font-size:15px;flex:none;width:26px;}
+  .tabbtn .t{flex:1;line-height:1.2;}
+  .tabbtn .chk{flex:none;width:16px;height:16px;border-radius:50%;background:var(--greenbg);border:1px solid var(--green);color:var(--green);font-size:10px;display:none;align-items:center;justify-content:center;}
+  .tabbtn:hover{background:var(--cream);border-color:var(--border);}
+  .tabbtn.active{background:var(--navy);border-color:var(--navy);color:var(--white);}
+  .tabbtn.active .d{color:var(--orange);}
+  .tabbtn.done .chk{display:flex;}
+  .wrap{flex:1;min-width:0;max-width:1080px;margin:0 auto;padding:26px 26px 60px;}
+  @media (max-width:860px){
+    .layout{flex-direction:column;}
+    .sidebar{width:100%;position:static;min-height:0;display:flex;flex-wrap:wrap;gap:4px;}
+    .tabbtn{width:auto;flex:none;}
+  }
+  .day-head{background:var(--navycard);background:var(--navy);border-radius:14px;padding:26px 28px;color:var(--white);margin-bottom:22px;position:relative;overflow:hidden;}
+  .day-head::before{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,60,0,.12);}
+  .day-eyebrow{font-family:var(--fbody);font-weight:700;font-size:11.5px;letter-spacing:2.5px;color:var(--orange);text-transform:uppercase;margin-bottom:8px;}
+  .day-title{font-family:var(--fdisp);font-weight:700;font-size:30px;color:var(--white);margin:0 0 8px;line-height:1.05;}
+  .day-title span{color:var(--orange);}
+  .day-desc{color:var(--lav);font-size:13.5px;max-width:720px;line-height:1.5;margin:0 0 16px;}
+  .chip-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;}
+  .chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:var(--lav);font-size:11px;font-weight:600;padding:5px 11px;border-radius:20px;}
+  .cum-note{background:rgba(255,60,0,.1);border:1px solid rgba(255,60,0,.35);color:#FFD5C4;font-size:11.5px;padding:8px 12px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;margin-bottom:16px;}
+  .start-btn{background:var(--orange);color:var(--white);border:none;border-radius:9px;font-family:var(--fbody);font-weight:700;font-size:14px;padding:13px 22px;cursor:pointer;transition:.15s;}
+  .start-btn:hover{background:#e63500;}
+  .start-btn:disabled{opacity:.5;cursor:default;}
+  .locked-note{background:rgba(23,142,51,.12);border:1px solid var(--green);color:#DFF3E4;font-size:12.5px;padding:12px 16px;border-radius:9px;display:inline-block;max-width:640px;line-height:1.5;}
+  .locked-note b{color:#8CFFAB;}
+  /* ===== sim area ===== */
+  .simcard{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+  .simhead{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--cream);gap:14px;flex-wrap:wrap;}
+  .simhead .tag{font-family:var(--fbody);font-weight:700;font-size:10.5px;letter-spacing:1.5px;color:var(--orange);text-transform:uppercase;}
+  .simhead .prog{font-size:12px;color:var(--slate);font-weight:600;}
+  .simhead-right{display:flex;align-items:center;gap:14px;}
+  .live-score{display:flex;align-items:center;gap:7px;background:var(--navy);border-radius:20px;padding:5px 12px;}
+  .live-score .lbl{font-size:9.5px;letter-spacing:1.2px;color:var(--lav);text-transform:uppercase;}
+  .live-score .val{font-family:var(--fdisp);font-weight:700;font-size:15px;color:var(--orange);}
+  .dotrow{display:flex;gap:5px;}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--border);}
+  .dot.on{background:var(--orange);}
+  .dot.hit{background:var(--green);}
+  .dot.miss{background:var(--red);}
+  .simbody{padding:22px 24px;}
+  .ctx-line{font-size:11.5px;color:var(--slate);opacity:.8;margin-bottom:14px;display:flex;gap:8px;align-items:center;}
+  .ctx-line b{color:var(--navy);}
+  .bubble-row{display:flex;gap:10px;margin-bottom:20px;}
+  .avatar{width:34px;height:34px;border-radius:50%;background:var(--bubble);border:1px solid var(--bubbleb);display:flex;align-items:center;justify-content:center;font-size:15px;flex:none;}
+  .bubble{background:var(--bubble);border:1px solid var(--bubbleb);border-radius:4px 14px 14px 14px;padding:12px 15px;max-width:560px;}
+  .bubble .who{font-size:9px;font-weight:700;letter-spacing:1.2px;color:var(--slate);text-transform:uppercase;margin-bottom:4px;}
+  .bubble .txt{font-size:13.5px;color:var(--navy);font-style:italic;line-height:1.45;}
+  .opts{display:flex;flex-direction:column;gap:9px;}
+  .opt{text-align:left;background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:12px 15px;cursor:pointer;font-family:var(--fbody);font-size:13px;color:var(--slate);transition:.12s;}
+  .opt:hover{border-color:var(--orange);background:var(--call);}
+  .opt .letter{display:inline-flex;width:20px;height:20px;border-radius:5px;background:var(--cream);border:1px solid var(--border);align-items:center;justify-content:center;font-weight:700;font-size:11px;color:var(--navy);margin-right:9px;}
+  .feedback{border-radius:10px;padding:15px 17px;margin-top:6px;display:none;}
+  .feedback.good{background:var(--greenbg);border:1.25px solid var(--green);}
+  .feedback.mid{background:#FFF7E6;border:1.25px solid #E0A400;}
+  .feedback.bad{background:var(--call);border:1.25px solid var(--red);}
+  .feedback .fb-title{font-weight:700;font-size:12.5px;margin-bottom:5px;}
+  .feedback.good .fb-title{color:var(--green);}
+  .feedback.mid .fb-title{color:#B07500;}
+  .feedback.bad .fb-title{color:var(--red);}
+  .feedback .fb-body{font-size:12.5px;color:var(--navy);line-height:1.5;}
+  .feedback .fb-ref{font-size:11px;color:var(--slate);margin-top:7px;opacity:.85;}
+  .nextbtn{margin-top:14px;background:var(--navy);color:var(--white);border:none;border-radius:8px;padding:10px 18px;font-weight:700;font-size:12.5px;cursor:pointer;display:none;}
+  /* ===== gate (login por e-mail) ===== */
+  .gate-overlay{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
+  .gate-card{background:var(--white);border-radius:16px;max-width:420px;width:100%;padding:32px 30px;text-align:center;}
+  .gate-badge{width:52px;height:52px;border-radius:12px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:var(--fdisp);font-weight:800;color:var(--white);font-size:26px;margin:0 auto 16px;}
+  .gate-title{font-family:var(--fdisp);font-weight:700;font-size:24px;color:var(--navy);margin:0 0 8px;}
+  .gate-sub{font-size:13px;color:var(--slate);margin:0 0 22px;line-height:1.5;}
+  .gate-input{width:100%;padding:13px 15px;border:1.5px solid var(--border);border-radius:9px;font-family:var(--fbody);font-size:14px;color:var(--navy);margin-bottom:10px;}
+  .gate-input:focus{outline:none;border-color:var(--orange);}
+  .gate-err{color:var(--red);font-size:12px;margin-bottom:10px;display:none;text-align:left;}
+  .gate-btn{width:100%;background:var(--orange);color:var(--white);border:none;border-radius:9px;font-family:var(--fbody);font-weight:700;font-size:14px;padding:13px;cursor:pointer;}
+  .gate-btn:hover{background:#e63500;}
+  .agent-pill{font-size:11px;color:var(--lav);display:flex;align-items:center;gap:8px;}
+  .agent-pill button{background:none;border:none;color:var(--orange);font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;}
+  /* ===== summary ===== */
+  .summary{padding:26px 24px;}
+  .sum-score{display:flex;align-items:center;gap:22px;margin-bottom:22px;flex-wrap:wrap;}
+  .sum-circle{width:110px;height:110px;border-radius:50%;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;}
+  .sum-circle b{font-family:var(--fdisp);font-size:34px;color:var(--orange);line-height:1;}
+  .sum-circle span{font-size:9.5px;color:var(--lav);letter-spacing:1.5px;margin-top:3px;text-transform:uppercase;}
+  .sum-title{font-family:var(--fdisp);font-size:22px;color:var(--navy);font-weight:700;margin:0 0 5px;}
+  .sum-sub{font-size:12.5px;color:var(--slate);max-width:520px;}
+  .bars{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:22px;}
+  .barcard{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:13px 15px;}
+  .barcard .bl{display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:7px;}
+  .barcard .btrack{height:8px;background:var(--cream);border-radius:6px;overflow:hidden;}
+  .barcard .bfill{height:100%;background:var(--orange);border-radius:6px;}
+  .coach-list{display:flex;flex-direction:column;gap:9px;margin-bottom:22px;}
+  .coach-item{background:var(--call);border:1px solid var(--orange);border-radius:9px;padding:11px 14px;font-size:12.5px;color:var(--navy);line-height:1.45;}
+  .coach-item b{color:var(--orange);}
+  .restart-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn-ghost{background:var(--white);border:1.5px solid var(--border);color:var(--navy);border-radius:9px;padding:11px 18px;font-weight:700;font-size:13px;cursor:pointer;}
+  .btn-ghost:hover{border-color:var(--orange);}
+  /* ===== idle ===== */
+  .idle-hint{color:var(--slate);font-size:12.5px;padding:30px 0;text-align:center;opacity:.7;}
+  footer{text-align:center;padding:20px;color:var(--lav);font-size:10.5px;background:var(--navy);}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div class="brand">
+      <div class="brand-badge">B</div>
+      <div class="brand-text"><b>Simulador de Atendimento</b><span>Trilha POD · Onboarding CS · 12 dias</span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="agent-pill" id="agentPill"></div>
+      <div class="score-pill">
+        <span class="lbl">Score acumulado</span>
+        <span class="val" id="globalScore">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <div class="gate-badge">B</div>
+    <h2 class="gate-title">Antes de começar</h2>
+    <p class="gate-sub">Insira o e-mail que você usa para acessar o Beedoo. Não é necessária senha — é só para identificar seus atendimentos simulados.</p>
+    <input type="text" class="gate-input" id="gateEmail" placeholder="seuemail@dominio.com" autocomplete="email">
+    <div class="gate-err" id="gateErr">Digite um e-mail válido para continuar.</div>
+    <button class="gate-btn" id="gateBtn">Entrar</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-label">Dias da trilha</div>
+    <div id="tabbar"></div>
+  </div>
+  <div class="wrap" id="wrap"></div>
+</div>
+
+<footer>Uso interno · Confidencial &nbsp;·&nbsp; Kaizen Gaming · Betano · 2026</footer>
+
+<script>
+/* =========================================================================
+   GATE — identificação por e-mail do Beedoo (sem senha)
+   Propositalmente NÃO persiste em localStorage/sessionStorage: como as
+   máquinas do time de atendimento são compartilhadas, guardar o e-mail
+   entre sessões faria a próxima pessoa "herdar" a identidade da anterior
+   sem perceber. O e-mail vive só em memória desta aba — qualquer F5,
+   fechamento de aba ou nova abertura do link pede de novo.
+   ========================================================================= */
+let currentAgentEmail = null;
+
+function getAgentEmail(){ return currentAgentEmail; }
+
+function isValidEmail(v){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+}
+
+function showGate(){
+  document.getElementById('gateOverlay').style.display = 'flex';
+}
+function hideGate(){
+  document.getElementById('gateOverlay').style.display = 'none';
+}
+
+function renderAgentPill(){
+  const email = getAgentEmail();
+  const pill = document.getElementById('agentPill');
+  if(!email){ pill.innerHTML=''; return; }
+  pill.innerHTML = `<span>${email}</span><button id="switchAgentBtn">trocar</button>`;
+  document.getElementById('switchAgentBtn').onclick = ()=>{
+    currentAgentEmail = null;
+    state.history = {};
+    renderAgentPill();
+    showGate();
+  };
+}
+
+document.getElementById('gateBtn').onclick = submitGate;
+document.getElementById('gateEmail').addEventListener('keydown', e=>{ if(e.key==='Enter') submitGate(); });
+
+function submitGate(){
+  const val = document.getElementById('gateEmail').value;
+  const err = document.getElementById('gateErr');
+  if(!isValidEmail(val)){ err.style.display='block'; return; }
+  err.style.display='none';
+  currentAgentEmail = val.trim();
+  document.getElementById('gateEmail').value = '';
+  hideGate();
+  renderAgentPill();
+  fetchServerHistory();
+}
+
+function initGate(){
+  // sempre pede o e-mail no carregamento — não há e-mail salvo entre sessões
+  showGate();
+  renderAgentPill();
+}
+
+/* =========================================================================
+   INTEGRAÇÃO SEM APPS SCRIPT — Google Formulário (grava) + CSV publicado (lê)
+   ========================================================================= */
+const FORM_ACTION_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfBF1rfMjXnjbaBYsB-TWjiiIzzLxbvzaPCbzzf6FFN45KeiA/formResponse';
+const FORM_ENTRIES = {
+  email: 'entry.1162063581',
+  dia: 'entry.7876034',
+  score: 'entry.2062494677',
+  atendimentos: 'entry.518549421'
+};
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3Wiegyh50qYVwKEOKPCpwiuLC7RXXKyGs3SblW5mRFFuGXO5aoFP4p_-g_oFJ2ZwD1YDJpC1roCAh/pub?gid=97132973&single=true&output=csv';
+
+/* envia o resultado do dia direto para o Google Formulário, em segundo
+   plano (sem abrir tela nenhuma para o agente). Usa modo "no-cors": o
+   navegador não deixa ler a resposta, mas o envio é registrado normalmente
+   na planilha vinculada ao formulário. */
+function sendResultToSheet(payload){
+  const body = new URLSearchParams();
+  body.append(FORM_ENTRIES.email, payload.email);
+  body.append(FORM_ENTRIES.dia, payload.dia);
+  body.append(FORM_ENTRIES.score, payload.score);
+  body.append(FORM_ENTRIES.atendimentos, payload.atendimentos);
+  fetch(FORM_ACTION_URL, { method:'POST', mode:'no-cors', body })
+    .catch(function(err){ console.warn('Falha ao enviar para o formulário:', err); });
+}
+
+/* parser simples de CSV, com suporte a campos entre aspas (necessário
+   porque a coluna de Timestamp do Google Forms costuma conter vírgula). */
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i];
+    if(inQuotes){
+      if(c === '"'){
+        if(text[i+1] === '"'){ field += '"'; i++; } else { inQuotes = false; }
+      } else field += c;
+    } else {
+      if(c === '"'){ inQuotes = true; }
+      else if(c === ','){ row.push(field); field=''; }
+      else if(c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else if(c === '\r'){ /* ignora */ }
+      else field += c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows;
+}
+
+/* consulta a planilha publicada (fonte da verdade) para saber quais dias
+   esse e-mail já concluiu, e bloqueia nova tentativa nesses dias — mesmo em
+   outro navegador/dispositivo. Pode levar alguns minutos para refletir um
+   envio muito recente, por causa do cache do próprio Google no link
+   publicado; por isso o dia recém-concluído já é travado localmente antes
+   mesmo dessa consulta, na própria função renderSummary(). */
+function fetchServerHistory(){
+  const email = getAgentEmail();
+  if(!email) return;
+  fetch(CSV_URL + '&_=' + Date.now())
+    .then(function(res){ return res.text(); })
+    .then(function(text){
+      const rows = parseCSV(text);
+      const serverHist = {};
+      const alvo = email.trim().toLowerCase();
+      for(let i=1;i<rows.length;i++){ // pula o cabeçalho
+        const r = rows[i];
+        if(!r || r.length<4) continue;
+        const ts = r[0], em = (r[1]||'').trim().toLowerCase(), dia = r[2], score = r[3];
+        if(em === alvo && !serverHist[dia]){
+          serverHist[dia] = { score: Number(score), timestamp: ts };
+        }
+      }
+      applyServerHistory(serverHist);
+    })
+    .catch(function(err){ console.warn('Não foi possível carregar o histórico da planilha:', err); });
+}
+
+function applyServerHistory(serverHist){
+  if(!serverHist) return;
+  Object.keys(serverHist).forEach(function(dayStr){
+    const dayN = parseInt(dayStr, 10);
+    const rec = serverHist[dayStr];
+    state.history[dayN] = { avg: Number(rec.score), done:true, locked:true, timestamp: rec.timestamp };
+  });
+  saveHistory();
+  renderAll();
+  updateGlobalScore();
+}
+
+function formatDate(iso){
+  if(!iso) return '';
+  return iso; // a coluna de Timestamp do Forms já vem formatada e legível
+}
+
+
+/* =========================================================================
+   DADOS — dias, temas e cenários
+   Todos os cenários são fictícios/anonimizados, ancorados em padrões reais e
+   recorrentes de motivos de contato e de apontamentos de qualidade (falas
+   genéricas de clientes, sem nomes/usernames/IDs/tickets reais).
+   Tags de rubrica: acolhimento | precisao | fluxo | fechamento
+   ========================================================================= */
+
+const DAYS = [
+  {n:1, title:"SOFT SKILLS", titleOrange:"& TOM DE VOZ", eyebrow:"DIA 01 · FUNDAMENTOS",
+    desc:"Acolhimento, empatia e tom de voz nas primeiras interações — a base de todo atendimento Betano.",
+    chips:["Empatia","Tom de voz","Clientes frustrados"], scenarioIds:["d1_1","d1_2","d1_3"]},
+  {n:2, title:"DÚVIDAS GERAIS", titleOrange:"SOBRE ESPORTES", eyebrow:"DIA 02 · CONHECIMENTO TÉCNICO",
+    desc:"Mercados, odds e liquidação — como explicar o funcionamento das apostas esportivas com clareza.",
+    chips:["Liquidação","Handicap","Estatísticas OPTA"], scenarioIds:["d2_1","d2_2","d2_3"]},
+  {n:3, title:"CONHECIMENTO DE", titleOrange:"PRODUTOS", eyebrow:"DIA 03 · PLATAFORMA",
+    desc:"Cassino, apostas ao vivo e funcionalidades gerais da plataforma — o que o cliente encontra no dia a dia.",
+    chips:["Cassino","Broken round","Ao vivo"], scenarioIds:["d3_1","d3_2","d3_3"]},
+  {n:4, title:"BÔNUS", titleOrange:"& MISSÕES", eyebrow:"DIA 04 · PROMOÇÕES",
+    desc:"Rodadas grátis, apostas grátis e missões — o maior motivo de contato recorrente da operação.",
+    chips:["Rodadas grátis","Missões","Cashback"], scenarioIds:["d4_1","d4_2","d4_3"]},
+  {n:5, title:"JOGO RESPONSÁVEL", titleOrange:"I", eyebrow:"DIA 05 · PROTEÇÃO AO JOGADOR",
+    desc:"Limites, pausas e autoexclusão — como conduzir esses temas com cuidado e sem prometer o que não pode ser prometido.",
+    chips:["Autoexclusão","Limites de depósito"], scenarioIds:["d5_1","d5_2","d5_3"]},
+  {n:6, title:"JOGO RESPONSÁVEL", titleOrange:"II", eyebrow:"DIA 06 · REATIVAÇÃO",
+    desc:"Reativação de conta e autoexclusão centralizada — os fluxos regulatórios que não podem ser acelerados manualmente.",
+    chips:["Reativação","Autoexclusão centralizada"], scenarioIds:["d6_1","d6_2","d6_3"]},
+  {n:7, title:"APOSTAS ESPORTIVAS", titleOrange:"AVANÇADO", eyebrow:"DIA 07 · CASOS COMPLEXOS",
+    desc:"Geolocalização, contestação de liquidação e regras de missão — os atendimentos mais técnicos do dia a dia.",
+    chips:["Geolocalização","Contestação","Regras de missão"], scenarioIds:["d7_1","d7_2","d7_3"]},
+  {n:8, title:"BÔNUS E MISSÕES", titleOrange:"II · PANDORA", eyebrow:"DIA 08 · ANÁLISE NO SISTEMA",
+    desc:"Identificação de bonus abuser e uso do sistema Pandora para embasar a resposta ao cliente.",
+    chips:["Bonus abuser","Sistema Pandora"], scenarioIds:["d8_1","d8_2","d8_3"]},
+  {n:9, title:"CLIENTES", titleOrange:"VIP", eyebrow:"DIA 09 · ATENDIMENTO DIFERENCIADO",
+    desc:"Reconhecimento sem promessas fora de política — o equilíbrio do atendimento VIP.",
+    chips:["Status Clube Betano","Negative balance VIP"], scenarioIds:["d9_1","d9_2","d9_3"]},
+  {n:10, title:"ATENDIMENTO", titleOrange:"RANDÔMICO", eyebrow:"DIA 10 · PRÁTICA",
+    desc:"Simulação cumulativa: cenários sorteados de todos os temas trabalhados até aqui.", isPractice:true,
+    chips:["Prática cumulativa"], scenarioIds:[]},
+  {n:11, title:"ATENDIMENTO RANDÔMICO", titleOrange:"· REFORÇO", eyebrow:"DIA 11 · PRÁTICA",
+    desc:"Mais uma rodada cumulativa, com foco nos pontos de menor pontuação até agora.", isPractice:true,
+    chips:["Prática cumulativa","Reforço"], scenarioIds:[]},
+  {n:12, title:"ATENDIMENTO RANDÔMICO", titleOrange:"II · FINAL", eyebrow:"DIA 12 · AVALIAÇÃO FINAL",
+    desc:"Simulação final cumulativa, com todos os temas da trilha — a mesma variedade do atendimento real.", isPractice:true, isFinal:true,
+    chips:["Prática cumulativa","Avaliação final"], scenarioIds:[]},
+];
+
+/* nota sobre numeração: o material original tinha "Dia 4" duplicado e pulava
+   o Dia 11 — aqui a trilha foi renumerada em sequência 01→12 mantendo a ordem
+   de temas exatamente como enviada. Ajuste os rótulos abaixo se a intenção
+   era outra. */
+
+function opt(tag, points, text, fb, ref){ return {tag, points, text, fb, ref: ref||null}; }
+
+const SCENARIOS = {
+
+  // ===== DIA 01 · SOFT SKILLS =====
+  d1_1:{cat:"account", client:"Marina", ctx:"Chat recebido após o bot — cliente já relatou o problema.",
+    msg:"Isso é um absurdo! Meu saque de ontem ainda não caiu e eu preciso desse dinheiro agora!",
+    opts:[
+      opt("acolhimento",9,"Olá, Marina! Compreendo sua frustração e peço desculpas pelo transtorno. Vou verificar o status do seu saque agora mesmo.","Valida a emoção antes de agir e assume a verificação com clareza — reduz a tensão logo na primeira resposta."),
+      opt("fluxo",5,"Bom dia. Pode me confirmar o valor e a data da solicitação de saque?","Correto tecnicamente, mas ignora a frustração relatada — falta acolhimento antes de pedir dados."),
+      opt("acolhimento",2,"Calma, já vou verificar, um minuto.","Tom seco e informal demais para um cliente já irritado; soa impaciente."),
+      opt("precisao",1,"Não se preocupe, isso já vai cair, é só aguardar mais um pouco.","Cria falsa expectativa sobre prazo sem ter verificado nada — risco alto de gerar novo contato insatisfeito.")
+    ]},
+  d1_2:{cat:"account", client:"Ricardo", ctx:"Cliente inicia o chat direto, sem passar pelo bot.",
+    msg:"Vocês são uma vergonha, suporte que não resolve nada, só enrolam!",
+    opts:[
+      opt("acolhimento",8,"Entendo sua insatisfação, Ricardo. Vou te ouvir com atenção para conseguir ajudar da melhor forma — pode me contar o que aconteceu?","Não leva a crítica para o lado pessoal, mantém o profissionalismo e abre espaço para o cliente explicar."),
+      opt("acolhimento",1,"Poxa, mas a gente faz o possível, viu? Não precisa ser grosso.","Reage na defensiva e devolve o tom ríspido — o correto é não levar a crítica para o pessoal."),
+      opt("fluxo",4,"Certo, qual é o problema?","Neutro e direto, mas sem nenhum acolhimento à insatisfação expressa."),
+      opt("acolhimento",6,"Sinto muito pela experiência, Ricardo. Estou aqui para ajudar.","Boa validação, mas poderia já convidar o cliente a detalhar o problema para avançar mais rápido.")
+    ]},
+  d1_3:{cat:"account", client:"cliente", ctx:"Comentário recorrente de pesquisa de satisfação usado como referência de tema.",
+    msg:"Só perdi tempo e nada foi resolvido.",
+    opts:[
+      opt("acolhimento",7,"Entendo, sinto muito pelo tempo perdido. Deixa eu revisar o seu caso com atenção para resolver agora.","Reconhece o desgaste do cliente e assume a responsabilidade pela condução, sem prometer o que não pode."),
+      opt("acolhimento",2,"Ficaremos super felizes em ajudar!","Expressão inadequada para cliente insatisfeito — pode soar irônica ou de pouca sensibilidade ao momento."),
+      opt("fluxo",5,"Vou verificar seu histórico e retorno em instantes.","Ação correta, mas sem nenhuma validação do sentimento relatado."),
+      opt("precisao",3,"Isso não devia ter acontecido, mas garanto que não vai se repetir.","Garantir resultado futuro que não está sob controle do agente cria expectativa que pode não se sustentar.")
+    ]},
+
+  // ===== DIA 02 · DÚVIDAS ESPORTES =====
+  d2_1:{cat:"bet", client:"Felipe", ctx:"Cliente contesta liquidação de mercado de chutes a gol.",
+    msg:"Vocês me roubaram! Minha aposta no mercado de chutes foi liquidada errada, eu tinha ganhado!",
+    opts:[
+      opt("precisao",9,"Entendo sua indignação, Felipe. Vou puxar a liquidação e a estatística oficial do OPTA, nosso parceiro, para revisarmos juntos os detalhes.","Mantém a neutralidade, propõe revisar com base em fonte oficial — conduz o conflito com fatos, não opinião."),
+      opt("precisao",4,"A liquidação foi feita corretamente, não temos como alterar.","Encerra a discussão sem mostrar o caminho de verificação, mesmo estando tecnicamente certo — falta transparência."),
+      opt("acolhimento",2,"Jogador, te dei o site oficial da estatística, consegue entender?","Tom rude e impaciente — nunca deve ser usado mesmo diante de um cliente exaltado."),
+      opt("fluxo",6,"Pode me passar o ID da aposta para eu verificar?","Correto, mas perde a chance de já contextualizar que a fonte de liquidação é oficial e auditável.")
+    ]},
+  d2_2:{cat:"bet", client:"cliente", ctx:"Dúvida sobre funcionamento de mercado de Handicap.",
+    msg:"Não entendi por que minha aposta no Handicap foi dada como perdida, o time ganhou o jogo!",
+    opts:[
+      opt("precisao",9,"Claro! No Handicap, o resultado considera a vantagem/desvantagem aplicada à aposta, não apenas o placar final — posso te mostrar como isso se aplicou ao seu bilhete.","Explica o conceito com clareza antes de entrar nos detalhes do caso — didática correta para mercados complexos."),
+      opt("precisao",3,"É assim mesmo que funciona o Handicap.","Resposta vaga, não explica o conceito nem convence o cliente."),
+      opt("fluxo",5,"Me envia o ID do bilhete que eu verifico.","Ação correta, mas pula a explicação didática que evitaria nova dúvida no futuro."),
+      opt("acolhimento",4,"Entendo que pareça estranho à primeira vista, deixa eu buscar mais detalhes.","Bom tom, mas ainda não avança para a explicação técnica em si.")
+    ]},
+  d2_3:{cat:"bet", client:"cliente", ctx:"Cliente pede cancelamento de aposta já realizada.",
+    msg:"Quero cancelar uma aposta que já fiz, é possível?",
+    opts:[
+      opt("precisao",9,"Não é possível cancelar uma aposta já realizada, mas se a partida ainda estiver em andamento, o Cash Out pode ser uma alternativa, caso disponível.","Explica de forma clara e honesta a regra, e já oferece a alternativa correta dentro da política."),
+      opt("precisao",2,"Vou verificar se consigo reverter para você.","Cria expectativa de algo que não é possível operacionalmente — risco de falsa expectativa."),
+      opt("fluxo",5,"Não, não é possível.","Tecnicamente correto, mas seco e sem apresentar a alternativa do Cash Out."),
+      opt("fechamento",6,"Não é possível cancelar. Fico à disposição para mais alguma dúvida.","Correto e cordial, mas perde a chance de orientar sobre o Cash Out como alternativa.")
+    ]},
+
+  // ===== DIA 03 · CONHECIMENTO DE PRODUTOS =====
+  d3_1:{cat:"cas", client:"cliente", ctx:"Cliente relata problema técnico durante rodada de cassino ao vivo.",
+    msg:"Minha rodada travou no meio e perdi o valor apostado, isso é golpe!",
+    opts:[
+      opt("precisao",8,"Entendo a preocupação. Vou verificar o registro técnico dessa rodada especificamente para confirmar o que ocorreu antes de qualquer conclusão.","Trata como uma questão técnica a ser investigada, sem confirmar nem negar precipitadamente."),
+      opt("precisao",2,"Isso não é golpe, o sistema é auditado.","Reage defensivamente à palavra usada pelo cliente em vez de focar na investigação do caso."),
+      opt("fluxo",5,"Pode me mandar um print da tela com o erro?","Ação útil, mas sem acolher a preocupação expressa antes."),
+      opt("fechamento",4,"Vou abrir uma análise e te aviso quando tiver retorno.","Correto no processo, mas sem prazo objetivo passado ao cliente.")
+    ]},
+  d3_2:{cat:"account", client:"cliente", ctx:"Dúvida sobre navegação na plataforma.",
+    msg:"Onde eu vejo o histórico dos meus depósitos dos últimos meses?",
+    opts:[
+      opt("precisao",8,"Você encontra o histórico completo em Conta > Extrato > Depósitos. Nele conseguem exibir os últimos 3 meses diretamente pela plataforma.","Orienta o autoatendimento com o caminho exato e já contextualiza a limitação do período exibido."),
+      opt("precisao",5,"Você pode ver isso na sua conta.","Vago, não dá o caminho exato — obriga o cliente a perguntar de novo."),
+      opt("fluxo",6,"Deixa eu verificar isso para você.","Assume uma tarefa simples que o próprio cliente pode resolver — perde a chance de promover o autoatendimento."),
+      opt("acolhimento",6,"Boa pergunta! Vou te mostrar o caminho certo.","Tom simpático, mas precisa complementar com o caminho exato na plataforma.")
+    ]},
+  d3_3:{cat:"bonus", client:"cliente", ctx:"Cliente relata cashback do cassino ao vivo divergente do esperado.",
+    msg:"O cálculo do meu cashback está errado, perdi muito mais do que isso!",
+    opts:[
+      opt("precisao",9,"O cashback considera a diferença entre ganhos e perdas no período, não apenas o valor perdido em uma única rodada — posso te mostrar o cálculo detalhado.","Explica o conceito correto do cashback antes de entrar no caso específico, evitando reabertura do chamado."),
+      opt("precisao",3,"O cálculo está certo, o sistema não erra.","Não explica a lógica, apenas nega — não ajuda o cliente a entender a divergência."),
+      opt("fluxo",5,"Vou verificar o seu extrato de apostas do período.","Ação correta, mas sem explicar antes a lógica do cálculo."),
+      opt("fechamento",4,"Vou abrir uma solicitação para a área responsável revisar.","Escala sem antes tentar esclarecer o conceito, o que poderia resolver no primeiro contato.")
+    ]},
+
+  // ===== DIA 04 · BÔNUS E MISSÕES =====
+  d4_1:{cat:"bonus", client:"José", ctx:"Cliente relata sumiço de aposta grátis.",
+    msg:"Minha aposta grátis sumiu da conta! Vocês tiram nossos benefícios sem avisar!",
+    opts:[
+      opt("acolhimento",9,"Compreendo sua chateação, José. Vou verificar agora o que houve com o benefício.","Chama o cliente pelo nome e assume a verificação com empatia, sem prometer nada ainda."),
+      opt("fluxo",6,"Qual é o ID da aposta grátis para eu consultar?","Direto ao ponto tecnicamente, mas sem nenhuma validação emocional antes."),
+      opt("precisao",2,"As apostas grátis expiram automaticamente após o prazo, deve ser isso.","Assume a causa sem verificar o caso, podendo passar informação incorreta."),
+      opt("acolhimento",3,"Calma, deve ter uma explicação.","Tom informal e vago, não transmite segurança nem direciona para a verificação.")
+    ]},
+  d4_2:{cat:"bonus", client:"cliente", ctx:"Cliente pergunta sobre rodadas grátis não recebidas após missão.",
+    msg:"Cumpri a missão do Brasileirão e não recebi as rodadas grátis, já faz dois dias.",
+    opts:[
+      opt("precisao",8,"Vou verificar o andamento da sua participação na missão e o prazo de crédito das rodadas para te dar uma resposta precisa.","Assume a investigação sem prometer prazo antes de confirmar o que está registrado no sistema."),
+      opt("precisao",2,"Vou garantir que isso seja creditado ainda hoje.","Garantir prazo sem verificação prévia é o tipo de falsa expectativa mais recorrente nos apontamentos de qualidade."),
+      opt("fluxo",6,"Me envia o ID da aposta que contabilizou a missão, por favor.","Correto, mas poderia já contextualizar o prazo padrão de crédito."),
+      opt("fechamento",5,"Vou abrir uma solicitação para o time responsável analisar.","Aceitável, mas sem antes tentar verificar diretamente se há algo já resolvível no primeiro contato.")
+    ]},
+  d4_3:{cat:"bonus", client:"cliente", ctx:"Cliente com aposta grátis que não pôde ser usada no app.",
+    msg:"A aposta grátis não está funcionando no aplicativo, já tentei de tudo.",
+    opts:[
+      opt("precisao",8,"Vamos tentar uma coisa rápida: abra o site em uma guia anônima do navegador e tente novamente — às vezes o app tem cache acumulado que trava a aplicação do bônus.","Orienta um passo prático e específico, com uma alternativa objetiva de troubleshooting."),
+      opt("fluxo",5,"Vou abrir um chamado para a equipe técnica analisar.","Escala direto sem tentar um passo simples de resolução no primeiro contato."),
+      opt("precisao",3,"Tenta desinstalar e reinstalar o aplicativo.","Passo genérico sem relação direta com o problema relatado (aplicação de bônus)."),
+      opt("acolhimento",6,"Entendo a frustração, vou te ajudar a resolver isso agora.","Bom acolhimento, mas sem indicar ainda um passo prático de solução.")
+    ]},
+
+  // ===== DIA 05 · JOGO RESPONSÁVEL I =====
+  d5_1:{cat:"rg_issue", client:"cliente", ctx:"Cliente já atingiu o limite de depósito configurado.",
+    msg:"Por que não consigo depositar mais? Configurei um limite mas quero aumentar agora.",
+    opts:[
+      opt("precisao",8,"Você atingiu o limite de depósito que configurou. Por segurança, alterações para aumentar o limite têm um período de carência antes de entrarem em vigor.","Explica a regra de proteção ao jogador com clareza, sem tentar contornar a trava de segurança."),
+      opt("precisao",2,"Vou liberar o aumento agora mesmo para você.","Contorna uma trava de proteção ao jogador — nunca deve ser feito manualmente pelo atendimento."),
+      opt("fluxo",5,"Você pode alterar isso na sua conta, em Proteção ao Jogador.","Correto, mas não explica o motivo do período de carência, o que pode gerar novo contato."),
+      opt("acolhimento",4,"Entendo que você queira depositar mais, mas isso é uma medida de proteção.","Bom começo, mas incompleto sem explicar o prazo de carência.")
+    ]},
+  d5_2:{cat:"rg_issue", client:"cliente", ctx:"Cliente pergunta sobre pausa temporária na conta.",
+    msg:"Como faço para pausar minha conta por um tempo e depois voltar a jogar?",
+    opts:[
+      opt("precisao",9,"Você pode ativar uma pausa temporária em Conta > Proteção ao Jogador, escolhendo o período desejado. Ao final do prazo, o acesso é reativado automaticamente.","Explica o processo completo, incluindo o que acontece ao final do período — evita um novo contato de dúvida."),
+      opt("precisao",5,"Você pode fazer isso na sua conta.","Vago, não indica o caminho nem o que acontece ao final da pausa."),
+      opt("fluxo",6,"Vou te enviar o passo a passo.","Ação correta, mas melhor complementar já explicando o retorno automático."),
+      opt("precisao",2,"Depois da pausa você precisa entrar em contato para reativar.","Informação incorreta — a pausa temporária é reativada automaticamente ao fim do prazo, diferente da autoexclusão.")
+    ]},
+  d5_3:{cat:"rg_issue", client:"cliente", ctx:"Cliente demonstra sinais de preocupação com o próprio comportamento de jogo.",
+    msg:"Acho que estou gastando mais do que deveria, o que eu posso fazer?",
+    opts:[
+      opt("acolhimento",9,"Que bom que você trouxe isso — é importante. Você pode configurar limites de depósito, tempo de sessão ou até uma pausa temporária, o que fizer mais sentido para você.","Acolhe a fala com cuidado e apresenta as ferramentas de proteção ao jogador disponíveis, sem julgamento."),
+      opt("fluxo",5,"Você pode configurar limites em Proteção ao Jogador.","Informação correta, mas fria diante de uma fala que pede acolhimento."),
+      opt("acolhimento",3,"Não se preocupe, é normal, muita gente sente isso.","Minimiza o relato em vez de acolher e direcionar para as ferramentas de proteção."),
+      opt("precisao",4,"Recomendo falar com sua família sobre isso.","Foge do escopo do atendimento — o correto é oferecer as ferramentas de proteção da própria plataforma.")
+    ]},
+
+  // ===== DIA 06 · JOGO RESPONSÁVEL II =====
+  d6_1:{cat:"rg_issue", client:"cliente", ctx:"Cliente em autoexclusão pede reativação imediata.",
+    msg:"Fiz autoexclusão há um tempo e quero voltar a jogar agora, como faço?",
+    opts:[
+      opt("precisao",9,"A autoexclusão ativa em sua conta é feita pela plataforma centralizada do Governo, e só pode ser revogada por ela, seguindo as regras vigentes. Não conseguimos acelerar esse processo manualmente.","Explica corretamente a natureza regulatória do processo, sem tentar contornar ou acelerar o que não está sob controle do atendimento."),
+      opt("precisao",2,"Vou verificar se consigo reativar sua conta agora.","Tentar reativar manualmente uma autoexclusão centralizada contraria a regulação — nunca deve ser prometido."),
+      opt("fluxo",5,"Você precisa acessar a plataforma de autoexclusão do Governo para isso.","Correto, mas sem explicar o motivo nem os próximos passos completos após a revogação."),
+      opt("acolhimento",6,"Entendo que você queira voltar, mas isso depende de outro órgão.","Bom tom, mas incompleto sem indicar o caminho e os passos seguintes.")
+    ]},
+  d6_2:{cat:"account", client:"cliente", ctx:"Cliente fechou a conta e agora quer reabrir.",
+    msg:"Fechei minha conta e quero reativar, é possível?",
+    opts:[
+      opt("precisao",8,"Sim, é possível reabrir sua conta. Vou te passar o passo a passo para o processo de reativação.","Confirma a possibilidade e já direciona para o processo correto, sem criar expectativas fora do fluxo."),
+      opt("fluxo",6,"Vou verificar sua conta e te retorno.","Correto, mas menos direto do que já confirmar a possibilidade de reativação em si."),
+      opt("precisao",3,"Não é possível reabrir uma conta fechada.","Informação incorreta para fechamento voluntário simples, que tem processo de reativação previsto."),
+      opt("fechamento",5,"Vou abrir uma solicitação para a área responsável avaliar seu caso.","Escala desnecessariamente um processo que tem fluxo direto de autoatendimento.")
+    ]},
+  d6_3:{cat:"account", client:"cliente", ctx:"Cliente questiona se pode criar nova conta após exclusão da anterior.",
+    msg:"Se eu excluir minha conta, posso usar os mesmos dados para criar outra depois?",
+    opts:[
+      opt("precisao",9,"Não é possível. As contas são associadas ao CPF, e é permitido apenas um cadastro por pessoa — mesmo excluindo a conta, não é possível criar uma nova com os mesmos dados.","Explica a regra com clareza e transparência, evitando falsa expectativa sobre múltiplos cadastros."),
+      opt("precisao",2,"Sim, depois de excluída você pode criar uma nova conta normalmente.","Informação incorreta que pode gerar expectativa equivocada e problema futuro de conformidade."),
+      opt("fluxo",4,"Vou verificar essa possibilidade para você.","Gera dúvida desnecessária sobre uma regra que já é clara e não comporta exceção."),
+      opt("acolhimento",5,"Entendo a pergunta, mas isso tem uma regra específica de cadastro.","Caminho correto, mas incompleto sem afirmar a regra de forma direta.")
+    ]},
+
+  // ===== DIA 07 · APOSTAS ESPORTIVAS AVANÇADO =====
+  d7_1:{cat:"account", client:"cliente", ctx:"Cliente relata bloqueio por geolocalização.",
+    msg:"Por que fica dizendo que minha localização não é permitida? Estou no Brasil normalmente!",
+    opts:[
+      opt("precisao",7,"Entendo. Isso pode ocorrer por uso de VPN, rede corporativa ou GPS desativado. Você pode verificar se algum desses está ativo no seu dispositivo?","Orienta a investigação técnica com causas plausíveis, sem solicitar dados desnecessários já validados."),
+      opt("fluxo",3,"Pode confirmar seu CPF e data de nascimento para eu verificar?","Solicita dados de identidade que não têm relação com o problema técnico relatado — desnecessário quando a identidade já está validada."),
+      opt("precisao",4,"Isso é uma falha do sistema, vou abrir um chamado.","Conclui a causa sem investigar as opções de troubleshooting mais simples primeiro."),
+      opt("acolhimento",5,"Entendo a frustração, vou te ajudar a resolver isso.","Bom tom, mas sem indicar ainda nenhum caminho técnico de verificação.")
+    ]},
+  d7_2:{cat:"bet", client:"cliente", ctx:"Cliente questiona não contabilização de aposta grátis por regra de missão.",
+    msg:"Fiz uma aposta e não contabilizou para a missão, por quê?",
+    opts:[
+      opt("precisao",8,"Vou verificar o ID da sua aposta, mas normalmente isso ocorre quando a odd está abaixo do mínimo exigido pela missão — posso confirmar certinho no seu caso.","Contextualiza uma causa comum e ainda assim confirma antes de afirmar, evitando conclusão precipitada."),
+      opt("precisao",3,"Certamente sua aposta não seguiu as regras da missão.","Assume a causa sem verificar o caso específico do cliente."),
+      opt("fluxo",6,"Me envia o ID da aposta para eu verificar.","Correto, mas sem contextualizar a causa mais comum enquanto aguarda a informação."),
+      opt("fechamento",4,"Vou abrir uma solicitação para a área de promoções analisar.","Escala sem antes tentar verificar diretamente algo que costuma ser visível no próprio atendimento.")
+    ]},
+  d7_3:{cat:"bet", client:"cliente", ctx:"Cliente contesta prazo de revisão de liquidação após reclamação anterior.",
+    msg:"Já abri um chamado sobre minha aposta há dias e continua sem liquidar, o que está acontecendo?",
+    opts:[
+      opt("precisao",8,"Vou verificar o status da sua solicitação anterior. Revisões de liquidação costumam levar até 24h, podendo variar conforme a complexidade do caso.","Dá um prazo real e verificável em vez de garantir algo fora do seu controle, e assume a checagem do caso anterior."),
+      opt("precisao",2,"Pode ficar tranquilo que já estamos resolvendo, vai sair ainda hoje.","Garantir um prazo específico sem verificação prévia é uma das falsas expectativas mais recorrentes nos apontamentos de qualidade."),
+      opt("fluxo",5,"Vou verificar o status do seu chamado anterior.","Ação correta, mas sem contextualizar o prazo padrão esperado para o cliente."),
+      opt("acolhimento",4,"Entendo a demora, deve ser resolvido logo.","Tom empático, mas vago e sem verificação real do caso.")
+    ]},
+
+  // ===== DIA 08 · BÔNUS E MISSÕES II · PANDORA =====
+  d8_1:{cat:"bonus", client:"cliente", ctx:"Consulta no sistema Pandora indica classificação de bonus abuser.",
+    msg:"Não estou elegível para nenhum bônus, por quê? Isso não é justo!",
+    opts:[
+      opt("precisao",8,"Verifiquei no sistema e sua conta está classificada dentro de uma política específica de elegibilidade a bônus. Vou te enviar as informações oficiais sobre isso.","Usa a informação do sistema de análise para embasar a resposta com a macro obrigatória, sem revelar critérios internos sensíveis."),
+      opt("precisao",2,"Deve ser um erro, vou verificar e reverter isso para você.","Promete reversão de uma classificação de política interna sem qualquer verificação — risco de falsa expectativa."),
+      opt("fluxo",5,"Vou verificar sua conta no sistema.","Correto, mas sem avançar para explicar a política ao cliente enquanto investiga."),
+      opt("precisao",3,"Continue usando a plataforma normalmente que isso deve mudar.","Informação não documentada e fora da macro oficial — não deve ser adicionada por conta própria.")
+    ]},
+  d8_2:{cat:"bonus", client:"cliente", ctx:"Cliente questiona categorização do próprio caso após resposta padrão.",
+    msg:"Vocês me mandaram uma mensagem padrão só, não expliquei nada disso!",
+    opts:[
+      opt("acolhimento",8,"Peço desculpas se a mensagem pareceu genérica. Deixa eu revisar seu caso com atenção e te dar uma resposta mais específica.","Reconhece a falha na comunicação e se compromete a personalizar a resposta, sem ficar na defensiva."),
+      opt("fluxo",4,"Essa mensagem é o processo padrão para esse tipo de caso.","Justifica a mensagem padrão sem tentar entender a insatisfação específica do cliente."),
+      opt("acolhimento",3,"Entendo, mas é o que temos disponível.","Tom resignado que não busca melhorar a experiência do cliente insatisfeito."),
+      opt("precisao",5,"Vou verificar seu caso específico para complementar a informação.","Boa intenção, mas sem reconhecer antes a insatisfação com a resposta genérica recebida.")
+    ]},
+  d8_3:{cat:"bonus", client:"cliente", ctx:"Cliente pergunta quando a categorização de bonus abuser é reavaliada.",
+    msg:"Essa restrição de bônus é para sempre? Nunca mais vou receber nada?",
+    opts:[
+      opt("precisao",8,"Essa classificação é reavaliada periodicamente conforme critérios internos, não é definitiva — mas não temos como informar prazos específicos.","Esclarece que a situação pode mudar sem garantir prazo, equilibrando transparência e cuidado com expectativa."),
+      opt("precisao",2,"Sim, essa restrição é permanente.","Informação incorreta — a classificação é reavaliada periodicamente, não é definitiva."),
+      opt("precisao",3,"Logo em breve a restrição será retirada.","Garantir um resultado futuro específico sobre uma análise em andamento não é permitido."),
+      opt("fluxo",5,"Vou verificar isso no sistema para você.","Ação correta, mas essa informação sobre reavaliação periódica já é sabida e pode ser passada de imediato.")
+    ]},
+
+  // ===== DIA 09 · CLIENTES VIP =====
+  d9_1:{cat:"account", client:"cliente VIP", ctx:"Cliente de status elevado no Clube Betano questiona ausência de bônus de aniversário.",
+    msg:"Sou cliente antigo e de status alto, e hoje é meu aniversário — não recebi nenhum bônus, que decepção.",
+    opts:[
+      opt("acolhimento",9,"Que bom saber do seu aniversário! Entendo a expectativa, e realmente sinto que não tenha vindo dessa vez — vou verificar se há alguma campanha ativa disponível para você.","Reconhece o cliente e a expectativa genuína, sem prometer um bônus específico fora de política."),
+      opt("precisao",2,"Vou garantir que você receba um bônus de aniversário ainda hoje.","Prometer um benefício específico fora do que está definido na política de bônus não deve ser feito."),
+      opt("fluxo",4,"Bônus de aniversário depende de critérios internos.","Tecnicamente correto, mas frio diante do reconhecimento que um cliente VIP espera."),
+      opt("acolhimento",5,"Poxa, sinto muito por isso.","Empatia genuína, mas incompleta sem indicar um próximo passo de verificação.")
+    ]},
+  d9_2:{cat:"withdraw", client:"cliente VIP", ctx:"Cliente VIP com saldo negativo após estorno de cash-out.",
+    msg:"Meu saldo ficou negativo depois de um estorno, e sou cliente VIP — isso pode acontecer?",
+    opts:[
+      opt("precisao",8,"Sim, pode ocorrer em casos de revisão de cash-out, independente do status VIP — é um ajuste técnico do sistema. Vou te explicar exatamente o que houve no seu caso.","Explica a regra técnica com transparência, sem tratar o status VIP como isenção de regras operacionais."),
+      opt("precisao",3,"Isso não deveria acontecer para clientes VIP, vou verificar uma exceção.","Sugere tratamento excepcional fora de política com base apenas no status do cliente."),
+      opt("fluxo",6,"Vou verificar o que causou esse ajuste no seu saldo.","Correto, mas poderia já contextualizar que isso é um ajuste técnico normal do sistema."),
+      opt("acolhimento",5,"Entendo a surpresa, isso é incomum.","Tom adequado, mas incompleto tecnicamente sobre a causa do ajuste.")
+    ]},
+  d9_3:{cat:"account", client:"cliente VIP", ctx:"Cliente VIP pede prioridade em análise já em andamento.",
+    msg:"Sou cliente VIP, será que dá para priorizar minha análise? Já estou esperando há dias.",
+    opts:[
+      opt("acolhimento",8,"Entendo sua expectativa. Vou verificar o status atual da sua análise e sinalizar sua solicitação — não posso garantir prioridade fora do fluxo, mas vou acompanhar de perto.","Reconhece o cliente sem prometer um tratamento fora do processo padrão, mantendo a transparência."),
+      opt("precisao",2,"Vou solicitar prioridade máxima para o seu caso agora.","Prometer prioridade fora do fluxo operacional pode gerar expectativa não sustentável e tratamento desigual."),
+      opt("fluxo",5,"Vou verificar o status da sua análise.","Correto, mas sem reconhecer a expectativa específica do cliente sobre prioridade."),
+      opt("acolhimento",4,"Entendo, mas não temos como acelerar isso.","Direto e correto, porém seco diante do reconhecimento que um cliente VIP espera receber.")
+    ]},
+};
+
+/* pool completo para dias de prática cumulativa (10, 11, 12) */
+const ALL_IDS = Object.keys(SCENARIOS);
+
+/* =========================================================================
+   ESTADO
+   ========================================================================= */
+let state = {
+  currentDay: 1,
+  session: null, // {ids, idx, results:[{tag,points}], answered:bool}
+  history: {}, // {dayN: {avg, done, locked, timestamp}} — em memória, não persiste entre sessões
+};
+
+/* propositalmente sem localStorage: numa máquina compartilhada, o progresso
+   de um agente não deve "vazar" para o próximo que abrir a página. A fonte
+   de verdade por e-mail é a planilha, consultada via fetchServerHistory(). */
+function saveHistory(){ /* no-op — histórico vive só em memória desta sessão */ }
+
+function poolUpTo(dayN){
+  const days = DAYS.filter(d=>d.n<=dayN && !d.isPractice);
+  let ids = [];
+  days.forEach(d=> ids = ids.concat(d.scenarioIds));
+  return ids;
+}
+
+function pickSession(day){
+  const isPractice = day.isPractice;
+  let pool = isPractice ? ALL_IDS.slice() : poolUpTo(day.n);
+  // garante que os cenários novos do dia entram sempre (quando não é dia de prática)
+  let ids = [];
+  if(!isPractice){
+    ids = day.scenarioIds.slice();
+    let rest = pool.filter(i=>!ids.includes(i));
+    shuffle(rest);
+    const need = Math.min(6, pool.length) - ids.length;
+    ids = ids.concat(rest.slice(0, Math.max(0,need)));
+  } else {
+    let all = pool.slice();
+    shuffle(all);
+    const count = day.isFinal ? 8 : 6;
+    ids = all.slice(0, Math.min(count, all.length));
+  }
+  shuffle(ids);
+  return ids;
+}
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+}
+
+/* =========================================================================
+   RENDER — TABS
+   ========================================================================= */
+function renderTabs(){
+  const bar = document.getElementById('tabbar');
+  bar.innerHTML = '';
+  DAYS.forEach(d=>{
+    const btn = document.createElement('button');
+    const done = state.history[d.n] && state.history[d.n].done;
+    btn.className = 'tabbtn' + (d.n===state.currentDay?' active':'') + (done?' done':'');
+    btn.innerHTML = `<span class="d">${String(d.n).padStart(2,'0')}</span><span class="t">${d.title}${d.titleOrange?' '+d.titleOrange:''}</span><span class="chk">✓</span>`;
+    btn.onclick = ()=>{ state.currentDay = d.n; state.session=null; renderAll(); };
+    bar.appendChild(btn);
+  });
+}
+
+/* =========================================================================
+   RENDER — DAY VIEW
+   ========================================================================= */
+function renderDay(){
+  const wrap = document.getElementById('wrap');
+  const day = DAYS.find(d=>d.n===state.currentDay);
+  const chips = day.chips.map(c=>`<span class="chip">${c}</span>`).join('');
+  const cumNote = day.isPractice
+    ? `⚡ Simulação cumulativa: cenários sorteados de todos os temas trabalhados até o Dia ${day.n-1}.`
+    : (day.n>1 ? `⚡ Simulação cumulativa: inclui também temas dos dias 01 a ${String(day.n-1).padStart(2,'0')}.` : `⚡ Primeira simulação da trilha.`);
+
+  const rec = state.history[day.n];
+  const locked = !!(rec && rec.done);
+  const actionArea = locked
+    ? `<div class="locked-note">✓ Dia já concluído${rec.timestamp ? ' em '+formatDate(rec.timestamp) : ''} — nota <b>${rec.avg}%</b>. Este dia não pode ser respondido novamente. Se precisar de uma nova tentativa, fale com seu trainer/facilitador.</div>`
+    : `<button class="start-btn" id="startBtn">Iniciar simulação do Dia ${String(day.n).padStart(2,'0')}</button>`;
+
+  let html = `
+    <div class="day-head">
+      <div class="day-eyebrow">${day.eyebrow}</div>
+      <h1 class="day-title">${day.title} <span>${day.titleOrange}</span></h1>
+      <p class="day-desc">${day.desc}</p>
+      <div class="chip-row">${chips}</div>
+      <div class="cum-note">${cumNote}</div>
+      <div>${actionArea}</div>
+    </div>
+    <div class="simcard" id="simcard"></div>
+  `;
+  wrap.innerHTML = html;
+  if(!locked){ document.getElementById('startBtn').onclick = ()=>{ startSession(day); }; }
+
+  if(state.session && state.session.dayN===day.n){
+    renderSim();
+  } else {
+    document.getElementById('simcard').innerHTML = `<div class="idle-hint">Clique em "Iniciar simulação" para começar o atendimento do Dia ${String(day.n).padStart(2,'0')}.</div>`;
+  }
+}
+
+/* =========================================================================
+   SESSÃO DE SIMULAÇÃO
+   ========================================================================= */
+function startSession(day){
+  const rec = state.history[day.n];
+  if(rec && rec.done){ return; } // trava de segurança: dia já concluído, não permite refazer
+  const ids = pickSession(day);
+  state.session = { dayN: day.n, ids, idx:0, results:[], answeredCurrent:false };
+  renderSim();
+}
+
+function renderSim(){
+  const s = state.session;
+  const card = document.getElementById('simcard');
+  if(s.idx >= s.ids.length){ renderSummary(); return; }
+
+  const scId = s.ids[s.idx];
+  const sc = SCENARIOS[scId];
+  const opts = sc.opts.map((o,i)=>`
+    <button class="opt" data-i="${i}"><span class="letter">${String.fromCharCode(65+i)}</span>${o.text}</button>
+  `).join('');
+
+  const dots = s.ids.map((id,i)=>{
+    let cls='dot';
+    if(i<s.results.length){ cls += s.results[i].points>=7 ? ' hit' : (s.results[i].points<=3?' miss':' on'); }
+    else if(i===s.idx) cls+=' on';
+    return `<span class="${cls}"></span>`;
+  }).join('');
+
+  const liveTotal = s.results.reduce((a,r)=>a+r.points,0);
+  const livePct = s.results.length ? Math.round((liveTotal/(s.results.length*10))*100) : null;
+  const liveHtml = livePct===null ? '' : `<div class="live-score"><span class="lbl">CSAT da sessão</span><span class="val">${livePct}%</span></div>`;
+
+  card.innerHTML = `
+    <div class="simhead">
+      <span class="tag">Atendimento ${s.idx+1} de ${s.ids.length}</span>
+      <div class="simhead-right">
+        ${liveHtml}
+        <div class="dotrow">${dots}</div>
+      </div>
+    </div>
+    <div class="simbody">
+      <div class="ctx-line">${sc.ctx} &nbsp;·&nbsp; Cliente: <b>${sc.client}</b></div>
+      <div class="bubble-row">
+        <div class="avatar">👤</div>
+        <div class="bubble">
+          <div class="who">Cliente</div>
+          <div class="txt">"${sc.msg}"</div>
+        </div>
+      </div>
+      <div class="opts" id="optsWrap">${opts}</div>
+      <div class="feedback" id="fb"></div>
+      <button class="nextbtn" id="nextBtn">Próximo atendimento →</button>
+    </div>
+  `;
+
+  document.querySelectorAll('#optsWrap .opt').forEach(btn=>{
+    btn.onclick = ()=> selectOpt(sc, parseInt(btn.dataset.i));
+  });
+  document.getElementById('nextBtn').onclick = ()=>{
+    state.session.idx++;
+    state.session.answeredCurrent = false;
+    renderSim();
+  };
+}
+
+function selectOpt(sc, i){
+  if(state.session.answeredCurrent) return;
+  state.session.answeredCurrent = true;
+  const chosen = sc.opts[i];
+  state.session.results.push({tag:chosen.tag, points:chosen.points});
+
+  document.querySelectorAll('#optsWrap .opt').forEach(b=>b.style.pointerEvents='none');
+  const chosenBtn = document.querySelector(`#optsWrap .opt[data-i="${i}"]`);
+  chosenBtn.style.borderColor = chosen.points>=7?'var(--green)':(chosen.points<=3?'var(--red)':'#E0A400');
+
+  const fb = document.getElementById('fb');
+  const cls = chosen.points>=7?'good':(chosen.points<=3?'bad':'mid');
+  const title = chosen.points>=7?'Boa condução':(chosen.points<=3?'Ponto de atenção':'Pode melhorar');
+  fb.className = 'feedback '+cls;
+  fb.style.display='block';
+  fb.innerHTML = `<div class="fb-title">${title} · ${chosen.points}/10</div><div class="fb-body">${chosen.fb}</div>`;
+
+  document.getElementById('nextBtn').style.display='inline-block';
+  updateGlobalScore();
+}
+
+/* =========================================================================
+   RESUMO DA SESSÃO
+   ========================================================================= */
+const TAG_LABELS = {acolhimento:"Acolhimento & Tom de Voz", precisao:"Precisão Técnica", fluxo:"Fluxo & Processo", fechamento:"Fechamento & Categorização"};
+
+function renderSummary(){
+  const s = state.session;
+  const total = s.results.reduce((a,r)=>a+r.points,0);
+  const pct = Math.round((total/(s.results.length*10))*100);
+
+  const byTag = {};
+  s.results.forEach(r=>{
+    if(!byTag[r.tag]) byTag[r.tag]={sum:0,count:0};
+    byTag[r.tag].sum+=r.points; byTag[r.tag].count++;
+  });
+
+  const misses = [];
+  s.ids.forEach((id,i)=>{
+    const sc = SCENARIOS[id];
+    const r = s.results[i];
+    if(r.points<=4){
+      const opt = sc.opts.find(o=>o.tag===r.tag && o.points===r.points);
+      misses.push(`<div class="coach-item"><b>${TAG_LABELS[r.tag]}:</b> ${opt.fb}</div>`);
+    }
+  });
+
+  const barsHtml = Object.keys(TAG_LABELS).map(tag=>{
+    const d = byTag[tag];
+    const avg = d ? Math.round((d.sum/d.count)*10) : 0;
+    return `<div class="barcard"><div class="bl"><span>${TAG_LABELS[tag]}</span><span>${d?avg+'%':'—'}</span></div><div class="btrack"><div class="bfill" style="width:${d?avg:0}%"></div></div></div>`;
+  }).join('');
+
+  let qual = 'Precisa de reforço';
+  if(pct>=85) qual='Excelente condução';
+  else if(pct>=70) qual='Boa condução, com pontos de ajuste';
+  else if(pct>=50) qual='Atendimento parcial, revisar conceitos';
+
+  const finishedAt = new Date().toISOString();
+
+  document.getElementById('simcard').innerHTML = `
+    <div class="summary">
+      <div class="sum-score">
+        <div class="sum-circle"><b>${pct}%</b><span>Score da sessão</span></div>
+        <div>
+          <div class="sum-title">${qual}</div>
+          <div class="sum-sub">${s.ids.length} atendimentos simulados no Dia ${String(s.dayN).padStart(2,'0')}. Esse resultado foi registrado e este dia não poderá ser respondido novamente.</div>
+        </div>
+      </div>
+      <div class="bars">${barsHtml}</div>
+      ${misses.length? `<div class="coach-list">${misses.join('')}</div>` : `<div class="coach-item">Nenhum ponto crítico identificado nesta sessão — parabéns pela condução!</div>`}
+      <div class="restart-row">
+        <button class="btn-ghost" id="nextDayBtn">Ir para o próximo dia →</button>
+      </div>
+    </div>
+  `;
+
+  state.history[s.dayN] = {avg: pct, done:true, locked:true, timestamp: finishedAt};
+  saveHistory();
+  renderTabs();
+  updateGlobalScore();
+
+  sendResultToSheet({
+    email: getAgentEmail() || '(não identificado)',
+    dia: s.dayN,
+    score: pct,
+    atendimentos: s.ids.length,
+    breakdown: byTag,
+    timestamp: finishedAt
+  });
+
+  document.getElementById('nextDayBtn').onclick = ()=>{
+    const nextN = Math.min(s.dayN+1, DAYS.length);
+    state.currentDay = nextN;
+    state.session = null;
+    renderAll();
+  };
+}
+
+function updateGlobalScore(){
+  const el = document.getElementById('globalScore');
+  const s = state.session;
+  if(s && s.results.length){
+    const total = s.results.reduce((a,r)=>a+r.points,0);
+    el.textContent = Math.round((total/(s.results.length*10))*100)+'%';
+    return;
+  }
+  const vals = Object.values(state.history).map(h=>h.avg);
+  if(vals.length===0){ el.textContent='—'; return; }
+  const avg = Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+  el.textContent = avg+'%';
+}
+
+/* =========================================================================
+   BOOT
+   ========================================================================= */
+function renderAll(){ renderTabs(); renderDay(); }
+initGate();
+updateGlobalScore();
+renderAll();
+</script>
+</body>
+</html>
